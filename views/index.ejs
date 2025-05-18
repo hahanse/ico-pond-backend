@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Monitoring pH & Gambar</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin: 40px;
+      }
+      img {
+        max-width: 90%;
+        height: auto;
+        border: 2px solid #333;
+      }
+      h1 {
+        margin-bottom: 10px;
+      }
+      h2 {
+        color: #007bff;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Live Monitoring</h1>
+
+    <% if (imageUrl) { %>
+    <img src="<%= imageUrl %>" alt="Live Image" />
+    <% } else { %>
+    <p>Tidak ada gambar yang tersedia.</p>
+    <% } %>
+
+    <h2>
+      Nilai pH Saat Ini: <span id="phValue"><%= phValue ?? 'N/A' %></span>
+    </h2>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io(); // Membuat koneksi WebSocket ke server
+
+      // Mendengarkan event 'phUpdate' dari server
+      socket.on("phUpdate", function (ph) {
+        const phText = document.getElementById("phValue");
+        if (ph !== null) {
+          phText.textContent = ph.toFixed(2);
+        } else {
+          phText.textContent = "Belum ada data";
+        }
+      });
+    </script>
+  </body>
+</html>
