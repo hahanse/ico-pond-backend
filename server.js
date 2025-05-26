@@ -3,7 +3,12 @@ const http = require("http");
 const cors = require("cors");
 const { Server } = require("socket.io");
 const cloudinary = require("cloudinary").v2;
+const fs = require("fs");
 require("dotenv").config();
+
+const app = express();
+app.use(cors());
+app.use(express.json({ limit: "10mb" }));
 
 // Konfigurasi Cloudinary
 cloudinary.config({
@@ -12,15 +17,11 @@ cloudinary.config({
   api_secret: process.env.API_SECRET,
 });
 
-const app = express();
-app.use(cors());
-app.use(express.json({ limit: "10mb" }));
-
 const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // Ganti dengan domain frontend kamu
+    origin: "http://localhost:5173", // Ubah jika frontend beda
     methods: ["GET", "POST"],
   },
 });
@@ -30,20 +31,43 @@ io.on("connection", (socket) => {
   console.log("Client terhubung:", socket.id);
 });
 
-// Endpoint kirim nilai pH dari ESP32
+// ✅ Endpoint kirim nilai pH dari ESP32
 app.post("/ph", (req, res) => {
   const { ph } = req.body;
   console.log("pH diterima dari ESP32:", ph);
-  io.emit("phUpdate", parseFloat(ph)); // Kirim update nilai pH ke frontend
+  io.emit("phUpdate", parseFloat(ph));
   res.status(200).json({ message: "pH diterima" });
 });
 
-// Endpoint ambil 10 gambar terbaru dari Cloudinary
+// ✅ Endpoint log servo manual / otomatis dari ESP32
+app.post("/servo/:source", (req, res) => {
+  const source = req.params.source; // manual / otomatis
+  const waktu = new Date().toLocaleString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+
+  console.log(`Servo dijalankan secara ${source} pada ${waktu}`);
+  io.emit("servoLog", { source, waktu });
+
+  // Simpan ke file (opsional)
+  fs.appendFile("servo-log.txt", `${waktu} - ${source}\n`, (err) => {
+    if (err) console.error("Gagal menyimpan log:", err);
+  });
+
+  res.status(200).json({ message: `Log servo dari '${source}' diterima` });
+});
+
+// ✅ Endpoint ambil 10 gambar terbaru dari Cloudinary
 app.get("/", async (req, res) => {
   try {
     const result = await cloudinary.api.resources({
       type: "upload",
-      prefix: "", 
+      prefix: "",
       max_results: 10,
       direction: "desc",
     });
@@ -60,12 +84,12 @@ app.get("/", async (req, res) => {
   }
 });
 
-// Endpoint tampilkan data hama dalam bentuk tabel (opsional)
+// ✅ Endpoint data hama dari Cloudinary prefix "hama/"
 app.get("/hama", async (req, res) => {
   try {
     const result = await cloudinary.api.resources({
       type: "upload",
-      prefix: "hama",
+      prefix: "hama", // hanya folder "hama/"
       max_results: 10,
       direction: "desc",
     });
@@ -94,6 +118,7 @@ app.get("/hama", async (req, res) => {
   }
 });
 
+// ✅ Start server
 server.listen(3000, () => {
   console.log("Server berjalan di http://localhost:3000");
 });
