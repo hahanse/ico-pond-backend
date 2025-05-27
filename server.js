@@ -120,6 +120,24 @@ app.get("/", async (req, res) => {
   }
 });
 
+// Endpoint curah hujan dari ESP32
+app.post("/curah-hujan", (req, res) => {
+  const { status } = req.body; // misal { status: "hujan" }
+
+  if (!status) {
+    return res.status(400).json({ message: "Field 'status' wajib diisi" });
+  }
+
+  console.log("Status curah hujan diterima:", status);
+
+  // Emit event ke client (frontend) agar update UI
+  io.emit("curahHujanUpdate", status);
+
+  // Bisa juga simpan atau proses lebih lanjut di sini
+
+  res.status(200).json({ message: "Status curah hujan diterima" });
+});
+
 // Jalankan server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
