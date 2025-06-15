@@ -7,7 +7,11 @@ const axios = require("axios");
 require("dotenv").config();
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: "https://ico-pond.vercel.app",
+  })
+);
 app.use(express.json({ limit: "10mb" }));
 
 cloudinary.config({
@@ -20,7 +24,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: "https://ico-pond.vercel.app",
     methods: ["GET", "POST"],
   },
 });
@@ -34,10 +38,14 @@ io.on("connection", (socket) => {
 });
 
 // Endpoint pH dari ESP32
-app.post("/ph", (req, res) => {
+app.post("/ph", async (req, res) => {
   const { ph } = req.body;
   console.log("pH diterima dari ESP32:", ph);
+
+  // Kirim data pH ke client via Socket.IO
   io.emit("phUpdate", parseFloat(ph));
+
+  // Tidak lagi mengirim POST ke frontend
   res.status(200).json({ message: "pH diterima" });
 });
 
