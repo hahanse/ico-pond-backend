@@ -14,4 +14,4 @@ COPY . .
 EXPOSE 8080
 
 # Jalankan aplikasi
-CMD ["npm", "start"]
+CMD ["node", "server.js"]
